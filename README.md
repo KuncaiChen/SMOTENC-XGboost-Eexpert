@@ -16,4 +16,4 @@ Relevant Python libraries such as pandas, numpy, xgboost, etc.
 Contributing
 If you find any issues or have suggestions for improvement, feel free to contribute by submitting pull requests or opening issues.
 License
-Specify the license under which this project is distributed.
+MIT License
