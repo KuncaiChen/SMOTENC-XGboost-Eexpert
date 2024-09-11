@@ -1,62 +1,62 @@
 import xgboost as xgb
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
 import pandas as pd
-from sklearn.metrics import precision_score
-from sklearn.metrics import recall_score
-from sklearn.metrics import f1_score
-from sklearn.metrics import roc_auc_score
 
+"""
+Parameters:
+    data_file_path (str): Path to the input data file ('SMOTENC_data.csv').
+    test_size_value (float): Proportion of the dataset to be included in the test split (default is 0.2).
+    shuffle_value (bool): Boolean indicating whether to shuffle the data before splitting (default is True).
+    random_state_value (int): Seed for reproducibility when splitting the data (default is 123).
+    learning_rate_value (float): Learning rate for the XGBoost model (default is 0.2).
+    random_state_model (int): Random state seed for the XGBoost model (default is 10).
+    APC_weight_value (int): Weight for Aerobic plate counts during expert weight adjustment (default is 3).
+    Ecoli_weight_value (int): Weight for Escherichia coli during expert weight adjustment (default is 4).
+    Salmonella_weight_value (int): Weight for Salmonella during expert weight adjustment (default is 3).
+    Lmonocytogenes_weight_value (int): Weight for Listeria monocytogenes during expert weight adjustment (default is 4).
+    Bcereus_weight_value (int): Weight for Bacillus cereus during expert weight adjustment (default is 2).
+"""
 
-def load_and_preprocess_data(path='SMOTENC_data.csv'):
+data_file_path = 'SMOTENC_data.csv'
+test_size_value = 0.2
+shuffle_value = True
+random_state_value = 123
+learning_rate_value = 0.2
+random_state_model = 10
+APC_weight_value = 3
+Ecoli_weight_value = 4
+Salmonella_weight_value = 3
+Lmonocytogenes_weight_value = 4
+Bcereus_weight_value = 2
+
+def load_and_preprocess_data(file_path):
     """
-    Load the data from the CSV file and perform preprocessing.
+    Load the data from the specified CSV file and perform preprocessing.
 
-    Parameters
-    ----------
-    path : str
-        The path to the CSV file.
+    Args:
+        file_path (str): Path to the CSV file.
 
-    Returns
-    -------
-    X : pandas.DataFrame
-        Feature columns.
-    Y : pandas.Series
-        Target column.
+    Returns:
+        X (pandas.DataFrame): Feature columns.
+        Y (pandas.Series): Target column.
     """
-    # Load the data
-    data = pd.read_csv(path)
-
-    # Select the feature columns
-    X = data[
-        [
-            'Aerobic plate counts',
-            'Escherichia coli',
-            'Salmonella',
-            'Listeria monocytogenes',
-            'Bacillus cereus',
-            'Economic level',
-            'Month',
-            'Classification',
-            'Year',
-        ]
-    ]
-
-    # Select the target column
+    data = pd.read_csv(file_path)
+    X = data[['Aerobic plate counts', 'Escherichia coli', "Salmonella", "Listeria monocytogenes", "Bacillus cereus",
+              'Economic level', 'Month', 'Classification', "Year"]]
     Y = data['State']
-
-    # Return the preprocessed data
     return X, Y
 
-
-
-def split_data(X, Y):
+def split_data(X, Y, test_size=test_size_value, shuffle=shuffle_value, random_state=random_state_value):
     """
     Split the data into training and testing sets.
 
     Args:
         X (pandas.DataFrame): Feature columns.
         Y (pandas.Series): Target column.
+        test_size (float): Proportion of the dataset to include in the test split.
+        shuffle (bool): Whether to shuffle the data before splitting.
+        random_state (int): Seed for reproducibility.
 
     Returns:
         X_train (pandas.DataFrame): Training feature columns.
@@ -64,27 +64,27 @@ def split_data(X, Y):
         Y_train (pandas.Series): Training target column.
         Y_test (pandas.Series): Testing target column.
     """
-    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, shuffle=True, random_state=123)
+    X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=test_size, shuffle=shuffle, random_state=random_state)
     return X_train, X_test, Y_train, Y_test
 
-
-def train_xgboost_model(X_train, Y_train):
+def train_xgboost_model(X_train, Y_train, learning_rate=learning_rate_value, random_state=random_state_model):
     """
     Train the XGBoost model.
 
     Args:
         X_train (pandas.DataFrame): Training feature columns.
         Y_train (pandas.Series): Training target column.
+        learning_rate (float): Learning rate for XGBoost.
+        random_state (int): Seed for reproducibility.
 
     Returns:
         model (xgboost.XGBClassifier): Trained XGBoost model.
     """
-    model = xgb.XGBClassifier(learning_rate = 0.2, random_state = 10)
+    model = xgb.XGBClassifier(learning_rate=learning_rate, random_state=random_state)
     model.fit(X_train, Y_train.astype('int'))
     return model
 
-
-def evaluate_model(model, X_test, Y_test):
+def evaluate_model(model, X_test, Y_test, model_name='XGboost'):
     """
     Evaluate the trained model on the testing set.
 
@@ -92,8 +92,8 @@ def evaluate_model(model, X_test, Y_test):
         model (xgboost.XGBClassifier): Trained XGBoost model.
         X_test (pandas.DataFrame): Testing feature columns.
         Y_test (pandas.Series): Testing target column.
+        model_name (str): Name of the model for printing.
     """
-    model_name = 'XGboost'
     predictions = model.predict(X_test)
     y_pro = model.predict_proba(X_test)
     print(f'{model_name}  Accuracy:', accuracy_score(Y_test, predictions))
@@ -101,7 +101,6 @@ def evaluate_model(model, X_test, Y_test):
     print(f'{model_name}  Recall  :', recall_score(Y_test, predictions))
     print(f'{model_name}  F1      :', f1_score(Y_test, predictions))
     print(f'{model_name} Auc: {roc_auc_score(Y_test, y_pro[:, 1])}')
-
 
 def normalize_weights(model):
     """
@@ -129,8 +128,8 @@ def normalize_weights(model):
     Bcereus = model.feature_importances_[4] / total_importances
     return APC, Ecoli, Salmonella, Lmonocytogenes, Bcereus
 
-
-def adjust_weights(APC, Ecoli, Salmonella, Lmonocytogenes, Bcereus):
+def adjust_weights(APC, Ecoli, Salmonella, Lmonocytogenes, Bcereus, APC_weight=APC_weight_value, Ecoli_weight=Ecoli_weight_value,
+                   Salmonella_weight=Salmonella_weight_value, Lmonocytogenes_weight=Lmonocytogenes_weight_value, Bcereus_weight=Bcereus_weight_value):
     """
     Adjust the normalized weights based on expert ratings.
 
@@ -140,6 +139,11 @@ def adjust_weights(APC, Ecoli, Salmonella, Lmonocytogenes, Bcereus):
         Salmonella (float): Normalized weight for Salmonella.
         Lmonocytogenes (float): Normalized weight for Listeria monocytogenes.
         Bcereus (float): Normalized weight for Bacillus cereus.
+        APC_weight (int): Weight for Aerobic plate counts.
+        Ecoli_weight (int): Weight for Escherichia coli.
+        Salmonella_weight (int): Weight for Salmonella.
+        Lmonocytogenes_weight (int): Weight for Listeria monocytogenes.
+        Bcereus_weight (int): Weight for Bacillus cereus.
 
     Returns:
         Expert_APC (float): Adjusted weight for Aerobic plate counts.
@@ -148,13 +152,12 @@ def adjust_weights(APC, Ecoli, Salmonella, Lmonocytogenes, Bcereus):
         Expert_Lmonocytogenes (float): Adjusted weight for Listeria monocytogenes.
         Expert_Bcereus (float): Adjusted weight for Bacillus cereus.
     """
-    Expert_APC = APC * 3
-    Expert_Ecoli = Ecoli * 4
-    Expert_Salmonella = Salmonella * 3
-    Expert_Lmonocytogenes = Lmonocytogenes * 4
-    Expert_Bcereus = Bcereus * 2
+    Expert_APC = APC * APC_weight
+    Expert_Ecoli = Ecoli * Ecoli_weight
+    Expert_Salmonella = Salmonella * Salmonella_weight
+    Expert_Lmonocytogenes = Lmonocytogenes * Lmonocytogenes_weight
+    Expert_Bcereus = Bcereus * Bcereus_weight
     return Expert_APC, Expert_Ecoli, Expert_Salmonella, Expert_Lmonocytogenes, Expert_Bcereus
-
 
 def normalize_adjusted_weights(Expert_APC, Expert_Ecoli, Expert_Salmonella, Expert_Lmonocytogenes, Expert_Bcereus):
     """
@@ -170,7 +173,7 @@ def normalize_adjusted_weights(Expert_APC, Expert_Ecoli, Expert_Salmonella, Expe
     Returns:
         Final_APC (float): Final normalized adjusted weight for Aerobic plate counts.
         Final_Ecoli (float): Final normalized adjusted weight for Escherichia coli.
-        Final_Salmonella1 (float): Final normalized adjusted weight for Salmonella.
+        Final_Salmonella (float): Final normalized adjusted weight for Salmonella.
         Final_Lmonocytogenes (float): Final normalized adjusted weight for Listeria monocytogenes.
         Final_Bcereus (float): Final normalized adjusted weight for Bacillus cereus.
     """
@@ -182,9 +185,10 @@ def normalize_adjusted_weights(Expert_APC, Expert_Ecoli, Expert_Salmonella, Expe
     Final_Bcereus = Expert_Bcereus / totalexpert_importances
     return Final_APC, Final_Ecoli, Final_Salmonella, Final_Lmonocytogenes, Final_Bcereus
 
+
 if __name__ == "__main__":
     # Load and preprocess the data
-    X, Y = load_and_preprocess_data()
+    X, Y = load_and_preprocess_data(data_file_path)
 
     # Split the data
     X_train, X_test, Y_train, Y_test = split_data(X, Y)
@@ -203,4 +207,3 @@ if __name__ == "__main__":
 
     # Normalize the adjusted weights
     Final_APC, Final_Ecoli, Final_Salmonella, Final_Lmonocytogenes, Final_Bcereus = normalize_adjusted_weights(Expert_APC, Expert_Ecoli, Expert_Salmonella, Expert_Lmonocytogenes, Expert_Bcereus)
-
