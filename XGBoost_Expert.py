@@ -8,19 +8,46 @@ from sklearn.metrics import f1_score
 from sklearn.metrics import roc_auc_score
 
 
-def load_and_preprocess_data():
+def load_and_preprocess_data(path='SMOTENC_data.csv'):
     """
     Load the data from the CSV file and perform preprocessing.
 
-    Returns:
-        X (pandas.DataFrame): Feature columns.
-        Y (pandas.Series): Target column.
+    Parameters
+    ----------
+    path : str
+        The path to the CSV file.
+
+    Returns
+    -------
+    X : pandas.DataFrame
+        Feature columns.
+    Y : pandas.Series
+        Target column.
     """
-    data = pd.read_csv('SMOTENC_data.csv')
-    X = data[['Aerobic plate counts', 'Escherichia coli', "Salmonella", "Listeria monocytogenes", "Bacillus cereus",
-              'Economic level', 'Month', 'Classification', "Year"]]
+    # Load the data
+    data = pd.read_csv(path)
+
+    # Select the feature columns
+    X = data[
+        [
+            'Aerobic plate counts',
+            'Escherichia coli',
+            'Salmonella',
+            'Listeria monocytogenes',
+            'Bacillus cereus',
+            'Economic level',
+            'Month',
+            'Classification',
+            'Year',
+        ]
+    ]
+
+    # Select the target column
     Y = data['State']
+
+    # Return the preprocessed data
     return X, Y
+
 
 
 def split_data(X, Y):
