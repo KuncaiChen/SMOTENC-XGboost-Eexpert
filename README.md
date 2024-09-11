@@ -24,7 +24,7 @@ To use these scripts, make sure you have the required Python libraries installed
 ## Dependencies
 
 - Python version 3.9
-- Relevant Python libraries such as `pandas`, `numpy`, `xgboost`, etc.
+- Relevant Python libraries such as pandas, numpy, xgboost, scikit-learn, imbalanced-learn, csv.
 
 ## Contributing
 
